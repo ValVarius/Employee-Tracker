@@ -1,3 +1,15 @@
-1,valerio,varani,1
-2,julia,siegl,2,1
-3,jessica,marter,3,1
+id,first_name,last_name,role_id,manager_id
+1,valerio,varani,20,NULL
+2,julia,siegl,19,NULL
+4,joseph,strurm,4,19
+5,john,smith,2,19
+6,robert,zimmerman,1,20
+7,jessica,marter,3,20
+8,marco,rambeau,21,21
+9,marco,polo,1,NULL
+10,marica,"del vecchio",1,NULL
+11,mm,mm,1,NULL
+12,moggi,cardi,1,20
+13,ennio,martucci,4,NULL
+14,federica,panicucci,4,NULL
+15,matteo,barbagalli,4,19

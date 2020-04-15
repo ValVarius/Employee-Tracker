@@ -1,6 +1,7 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
 require('dotenv').config();
+const cTable = require('console.table');
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -168,31 +169,68 @@ var connection = mysql.createConnection({
         name: "role",
         type: "input",
         message: "In Which Role will this employee work?",
-        validate: function(value) {
-            if (isNaN(value) === false) {
-              return true;
-            }
-            return false;
-          }
+        
       },
       {
         name: "manager",
         type: "input",
         message: "Enter the name of the Employees Manager if any:",
-        filter: input => {
-            if(input === "")
-            return null;
-        }
+        // filter: input => {
+        //     if(input === "")
+        //     return null;
+        // }
       }])
     .then(function(answer) {
-
-      var query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)";
-      connection.query(query,[answer.first, answer.last, answer.role,answer.role ], function(err) {
+      var role;
+      var manager;
+      var query = "SELECT * FROM employ_trackdb.role";
+      connection.query(query, function(err,res) {
         if (err) throw err;
-        console.log(answer.first  +" "+ answer.last + " is now officially an Employee");
-        console.log(answer.first  + " will work as a: " + answer.role);        
-        initiate();
+        var isThere = false;
+
+        for (let i = 0; i < res.length; i++) {
+          
+          if(res[i].title === answer.role)
+          {
+            role = res[i].id;
+            isThere = true;
+          }
+          
+        }
+
+        if(isThere === true) {
+          var inputFirstandLAst = answer.manager.split(" ");
+          var query = `SELECT role_id FROM Employee WHERE first_name = "${inputFirstandLAst[0]}" AND last_name = "${inputFirstandLAst[1]}"`;
+            connection.query(query, function(err,res) {
+              if (err) throw err;
+
+              manager = res[0].role_id;
+              
+
+              var query = "INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)";
+              connection.query(query,[answer.first, answer.last, role, manager ], function(err) {
+                if (err) throw err;
+                console.log(answer.first  +" "+ answer.last + " is now officially an Employee");
+                console.log(answer.first  + " will work as a: " + answer.role);        
+                initiate();
+              });
+            });
+
+       }
+        
+        
+        if (isThere === false)
+        {
+          console.log("The role you entered does not exist! Try Again!");
+          AddEmployee()
+        }
+                
+        
       });
+
+
+
+      
     });
 
   }
@@ -227,5 +265,83 @@ function viewAllEmployee() {
     });
 }
 function viewEmployeeByManager() {
-  
+
+  inquirer
+    .prompt({
+      name: "managerName",
+      type: "input",
+      message: "Enter the full name of the manager:"
+    })
+    .then(function(answer) {
+    
+      
+    
+ 
+  var input = answer.managerName;
+  var managersID;
+  var managersName;
+  var query = `SELECT id FROM role WHERE title = "Manager"`;
+        connection.query(query, function(err, res) {
+        if (err) throw err;
+        
+        managersID = res;
+        
+        for (let i = 0; i < managersID.length; i++) {
+          
+          var query = `SELECT CONCAT(first_name, " ", last_name) AS names FROM employee WHERE role_id = ${managersID[i].id} `;
+        connection.query(query, function(err, res) {
+        if (err) throw err;
+        
+        managersName = res;
+
+        var found = false;
+        for (let i = 0; i < managersName.length; i++){
+          
+              if (managersName[i].names == input) {
+              found = true;
+              var inputFirstandLAst = input.split(" ");
+              var query = `SELECT role_id FROM Employee WHERE first_name = "${inputFirstandLAst[0]}" AND last_name = "${inputFirstandLAst[1]}"`;
+                    connection.query(query, function(err, res) {
+                    if (err) throw err;
+                    
+                    var teamId = res[0].role_id;
+                                                              
+                    var query = `SELECT * FROM employee WHERE manager_id = ${teamId}`;
+                    connection.query(query, function(err, res) {
+                        if (err) throw err;
+
+                        console.log();
+                        console.log();
+                        
+                        console.table(input +"'s Team", res);
+                        initiate();
+                    });
+
+                });
+                
+              }
+
+            
+          
+          
+        }
+
+        if (found === false)
+        {
+          console.log("There are no managers by the name: "+ input);
+          
+        }
+
+         });
+        
+
+        }
+    });
+
+    
+  });
+    
+
+
+  initiate();
 }
